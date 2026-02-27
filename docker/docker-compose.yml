@@ -1,5 +1,4 @@
 services:
-
   postgres:
     image: postgres:15
     container_name: tcc_postgres
@@ -11,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d tcc_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   minio:
     image: minio/minio:latest
@@ -26,8 +30,14 @@ services:
       - minio_data:/data
 
   spark-master:
-    image: apache/spark:3.5.1
+    build:
+      context: ./spark
     container_name: spark_master
+    volumes:
+      - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - /home/lucas/Projects/TCC-DATA-ENGINEERING:/opt/spark/work-dir
+    environment:
+      - PYTHONPATH=/opt/spark/work-dir/src
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.master.Master
@@ -36,8 +46,13 @@ services:
       - "8080:8080"
 
   spark-worker:
-    image: apache/spark:3.5.1
+    build:
+      context: ./spark
     container_name: spark_worker
+    volumes:
+      - /home/lucas/Projects/TCC-DATA-ENGINEERING:/opt/spark/work-dir
+    environment:
+      - PYTHONPATH=/opt/spark/work-dir/src
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.worker.Worker
@@ -45,37 +60,52 @@ services:
     depends_on:
       - spark-master
 
+  airflow-init:
+    image: apache/airflow:2.8.1
+    container_name: airflow_init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres/tcc_db
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__FERNET_KEY: AwPSxv-IQc1rZ-lBU6UEZW3mUqlRsGv_NBFIkvI4JOk=
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow connections create-default-connections &&
+      airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin || true
+      "
+
   airflow:
     image: apache/airflow:2.8.1
     container_name: airflow
     depends_on:
-      - postgres
+      airflow-init:
+        condition: service_completed_successfully
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres/tcc_db
-      AIRFLOW__CORE__LOAD_EXAMPLES: 'False'
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__FERNET_KEY: AwPSxv-IQc1rZ-lBU6UEZW3mUqlRsGv_NBFIkvI4JOk=
     ports:
       - "8081:8080"
     command: >
       bash -c "
-      airflow db init &&
-      airflow webserver & 
+      airflow webserver &
       airflow scheduler
       "
 
   streamlit:
-    image: python:3.10
+    build:
+      context: ..
+      dockerfile: docker/streamlit/Dockerfile
     container_name: tcc_streamlit
-    volumes:
-      - ../app/streamlit:/app
-    working_dir: /app
-    command: >
-      bash -c "
-      pip install streamlit &&
-      streamlit run app.py --server.port=8501 --server.address=0.0.0.0
-      "
     ports:
       - "8501:8501"
+    depends_on:
+      - postgres
 
 volumes:
   postgres_data:
