@@ -18,7 +18,7 @@ default_args:
 
 tasks:
 
-  - task_id: start_task
+  - task_id: start
     operator: airflow.operators.empty.EmptyOperator
 
   - task_id: process_orders
@@ -32,14 +32,12 @@ tasks:
       application_args:
         - "--from-bucket"
         - "raw"
-
         - "--to-bucket"
         - "curated"
-
         - "--data-relative-path"
         - "olist/olist_orders_dataset.csv"
 
-  - task_id: end_task
+  - task_id: end
     operator: airflow.operators.empty.EmptyOperator
     dependencies:
       - process_orders
