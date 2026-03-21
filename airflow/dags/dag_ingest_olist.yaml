@@ -1,4 +1,4 @@
-dag_id: ingest_olist
+dag_id: dag_ingest_olist
 
 description: |
   DAG responsável pela ingestão do dataset Olist
@@ -34,7 +34,7 @@ tasks:
     dependencies:
       - start_task
     params:
-      python_callable: jobs.ingest_raw_olist.download_dataset
+      python_callable: jobs.spark_job_ingest_raw_olist.download_dataset
       retries: 3
       retry_delay: 120
 
@@ -43,7 +43,7 @@ tasks:
     dependencies:
       - download_dataset
     params:
-      python_callable: jobs.ingest_raw_olist.unzip_dataset
+      python_callable: jobs.spark_job_ingest_raw_olist.unzip_dataset
       retries: 2
       retry_delay: 60
 
@@ -52,7 +52,7 @@ tasks:
     dependencies:
       - unzip_dataset
     params:
-      python_callable: jobs.ingest_raw_olist.upload_to_minio
+      python_callable: jobs.spark_job_ingest_raw_olist.upload_to_minio
       retries: 3
       retry_delay: 180
 

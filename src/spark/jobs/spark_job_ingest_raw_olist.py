@@ -5,6 +5,7 @@ import logging
 import time
 from minio import Minio
 from dotenv import load_dotenv
+from  spark_session import create_spark_session
 
 load_dotenv()
 
@@ -124,7 +125,7 @@ def validate_upload(client, bucket, prefix, expected_files):
 def upload_to_minio():
     start = time.time()
 
-    logger.info("☁️ Starting upload to MinIO...")
+    logger.info("Starting upload to MinIO...")
 
     client = get_minio_client()
 
