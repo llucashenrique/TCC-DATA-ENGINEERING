@@ -31,11 +31,12 @@ services:
 
   spark-master:
     build:
-      context: ./spark
+      context: ..
+      dockerfile: docker/spark/Dockerfile
     container_name: spark_master
     volumes:
       - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
-      - /home/lucas/Projects/TCC-DATA-ENGINEERING:/opt/spark/work-dir
+      - ..:/opt/spark/work-dir
     environment:
       - PYTHONPATH=/opt/spark/work-dir/src
     command: >
@@ -47,10 +48,11 @@ services:
 
   spark-worker:
     build:
-      context: ./spark
+      context: ..
+      dockerfile: docker/spark/Dockerfile
     container_name: spark_worker
     volumes:
-      - /home/lucas/Projects/TCC-DATA-ENGINEERING:/opt/spark/work-dir
+      - ..:/opt/spark/work-dir
     environment:
       - PYTHONPATH=/opt/spark/work-dir/src
     command: >

@@ -1,0 +1,59 @@
+dag_id: dag_ingest_olist
+
+description: |
+  DAG responsável pela ingestão do dataset Olist
+  a partir do Kaggle para a camada RAW no MinIO.
+tags:
+  - ingestion
+  - olist
+  - kaggle
+schedule_interval: "@once"
+start_date: 2026-01-01T00:00:00
+catchup: false
+default_args:
+  retries: 2
+  retry_delay: 300
+  depends_on_past: false
+
+doc_md:
+  ### Pipeline Olist
+  1. Download Kaggle
+  2. Unzip arquivos
+  3. Upload para MinIO
+
+tasks:
+
+  - task_id: start_task
+    operator: airflow.operators.empty.EmptyOperator
+
+  - task_id: download_dataset
+    operator: airflow.operators.python.PythonOperator
+    dependencies:
+      - start_task
+    params:
+      python_callable: jobs.ingestion.spark_job_ingest_raw_olist.download_dataset
+      retries: 3
+      retry_delay: 120
+
+  - task_id: unzip_dataset
+    operator: airflow.operators.python.PythonOperator
+    dependencies:
+      - download_dataset
+    params:
+      python_callable: jobs.ingestion.spark_job_ingest_raw_olist.download_dataset
+      retries: 2
+      retry_delay: 60
+
+  - task_id: upload_to_minio
+    operator: airflow.operators.python.PythonOperator
+    dependencies:
+      - unzip_dataset
+    params:
+      python_callable: jobs.ingestion.spark_job_ingest_raw_olist.download_dataset
+      retries: 3
+      retry_delay: 180
+
+  - task_id: end_task
+    operator: airflow.operators.empty.EmptyOperator
+    dependencies:
+      - upload_to_minio
