@@ -1,5 +1,7 @@
 services:
   postgres:
+    networks:
+      - tcc_network
     image: postgres:15
     container_name: tcc_postgres
     environment:
@@ -17,11 +19,14 @@ services:
       retries: 20
 
   minio:
+    networks:
+      - tcc_network
     image: minio/minio:latest
     container_name: tcc_minio
     command: server /data --console-address ":9001"
-    env_file:
-      - ../.env
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -29,12 +34,16 @@ services:
       - minio_data:/data
 
   spark-master:
+    networks:
+      - tcc_network
     build:
-      context: ./spark
+      context: ..
+      dockerfile: docker/spark/Dockerfile
     container_name: spark_master
     volumes:
       - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
-      - /home/lucas/Projects/TCC-DATA-ENGINEERING:/opt/spark/work-dir
+      - ..:/opt/spark/work-dir
+      - spark_jars:/opt/spark/jars  # ← compartilha JARs
     environment:
       - PYTHONPATH=/opt/spark/work-dir/src
     command: >
@@ -45,11 +54,16 @@ services:
       - "8080:8080"
 
   spark-worker:
+    networks:
+      - tcc_network
     build:
-      context: ./spark
+      context: ..
+      dockerfile: docker/spark/Dockerfile
     container_name: spark_worker
     volumes:
-      - /home/lucas/Projects/TCC-DATA-ENGINEERING:/opt/spark/work-dir
+      - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ..:/opt/spark/work-dir
+      - spark_jars:/opt/spark/jars  # ← compartilha JARs
     environment:
       - PYTHONPATH=/opt/spark/work-dir/src
     command: >
@@ -60,38 +74,49 @@ services:
       - spark-master
 
   airflow-init:
+    networks:
+      - tcc_network
     build: ./airflow
     env_file:
-      - ../.env
+      - .env
     container_name: airflow_init
     depends_on:
       postgres:
         condition: service_healthy
+      spark-master:
+        condition: service_started  # ← garante que o volume já foi populado
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres/tcc_db
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      PYTHONPATH: /opt/airflow:/opt/airflow/spark
+      PYTHONPATH: /opt/airflow:/opt/spark/work-dir/src
     volumes:
+      - ..:/opt/spark/work-dir
       - ../airflow/dags:/opt/airflow/dags
-      - ../src/spark:/opt/airflow/spark
+      - spark_jars:/opt/spark/jars  # ← mesmo volume
     command: >
       bash -c "
       airflow db migrate &&
       airflow connections create-default-connections &&
-      airflow users create
-      --username admin
-      --firstname Admin
-      --lastname User
-      --role Admin
-      --email admin@example.com
-      --password admin || true
+      airflow connections add spark_default \
+        --conn-type spark \
+        --conn-host spark-master \
+        --conn-port 7077 || true &&
+      airflow users create \
+        --username admin \
+        --firstname Admin \
+        --lastname User \
+        --role Admin \
+        --email admin@example.com \
+        --password admin || true
       "
 
   airflow:
+    networks:
+      - tcc_network
     build: ./airflow
     env_file:
-      - ../.env
+      - .env
     container_name: airflow
     depends_on:
       airflow-init:
@@ -100,12 +125,13 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres/tcc_db
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      PYTHONPATH: /opt/airflow:/opt/airflow/spark
+      PYTHONPATH: /opt/airflow:/opt/spark/work-dir/src
     ports:
       - "8081:8080"
     volumes:
+      - ..:/opt/spark/work-dir
       - ../airflow/dags:/opt/airflow/dags
-      - ../src/spark:/opt/airflow/spark
+      - spark_jars:/opt/spark/jars  # ← mesmo volume
     command: >
       bash -c "
       airflow webserver &
@@ -113,6 +139,8 @@ services:
       "
 
   streamlit:
+    networks:
+      - tcc_network
     build:
       context: ..
       dockerfile: docker/streamlit/Dockerfile
@@ -122,6 +150,11 @@ services:
     depends_on:
       - postgres
 
+networks:
+  tcc_network:
+    driver: bridge
+
 volumes:
   postgres_data:
   minio_data:
+  spark_jars:
