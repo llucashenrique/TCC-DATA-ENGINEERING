@@ -21,7 +21,7 @@ Este projeto implementa um pipeline de dados completo para análise do dataset p
 
 ## 🎬 Demo
 
-> 📹 [Assista ao vídeo de demonstração](#) <!-- [substitua pelo link do vídeo ](https://www.youtube.com/watch?v=8x7fRGnNbV4)-->
+> 📹 [Assista ao vídeo de demonstração](https://www.youtube.com/watch?v=8x7fRGnNbV4)
 
 ![alt text](image.png)<!-- adicione um print do dashboard -->
 
