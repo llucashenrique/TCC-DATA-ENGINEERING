@@ -1,3 +1,4 @@
 ./env
 ./test.env
 *.mp4
+docker/.env
