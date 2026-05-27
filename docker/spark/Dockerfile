@@ -33,7 +33,7 @@ RUN curl -f -L -o /opt/spark/jars/woodstox-core-6.4.0.jar \
     https://repo1.maven.org/maven2/com/google/re2j/re2j/1.1/re2j-1.1.jar
 
 # Python libs
-COPY requirements.txt /tmp/requirements.txt
+COPY requirements-spark.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
 ENV JAVA_HOME=/opt/java/openjdk

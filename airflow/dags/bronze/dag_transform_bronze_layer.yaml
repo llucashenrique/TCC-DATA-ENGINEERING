@@ -1,20 +1,23 @@
 dag_id: dag_transform_bronze_layer
-
 description: |
-  DAG responsável pelo processamento do dataset Olist
-  utilizando Spark.
+  DAG responsável pela transformação dos datasets Olist
+  da camada raw para bronze utilizando Spark.
 tags:
   - spark
   - transformation
   - olist
-
+  - bronze
 schedule_interval: "@once"
 start_date: 2026-01-01T00:00:00
 catchup: false
+
 default_args:
   retries: 1
   retry_delay: 300
- 
+
+doc_md: |
+  ### DAG para transformação dos arquivos da RAW para camada Bronze.
+
 tasks:
 
   - task_id: start
@@ -22,52 +25,175 @@ tasks:
 
   - task_id: ingest_orders
     operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
-    dependencies: 
+    dependencies:
       - start
     params:
-      application: /opt/spark/work-dir/src/spark/jobs/spark_job_transform_bronze_layer.py
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
       conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
       application_args:
         - "--from-bucket"
-        - "raw-zone"
+        - "raw"
         - "--to-bucket"
-        - "bronze-zone"
+        - "bronze"
         - "--data-relative-path"
-        - "olist/orders/2026/03/orders.csv"
+        - "olist/olist_orders_dataset.csv"
 
   - task_id: ingest_customers
     operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
-    dependencies: 
-       - start
+    dependencies:
+      - start
     params:
-      application: /opt/spark/work-dir/src/spark/jobs/spark_job_transform_bronze_layer.py
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
       conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
       application_args:
         - "--from-bucket"
-        - "raw-zone"
+        - "raw"
         - "--to-bucket"
-        - "bronze-zone"
+        - "bronze"
         - "--data-relative-path"
-        - "olist/customers/2026/03/customers.csv"
+        - "olist/olist_customers_dataset.csv"
 
   - task_id: ingest_products
     operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
-    dependencies: 
-       - start
+    dependencies:
+      - start
     params:
-      application: /opt/spark/work-dir/src/spark/jobs/spark_job_transform_bronze_layer.py
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
       conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
       application_args:
         - "--from-bucket"
-        - "raw-zone"
+        - "raw"
         - "--to-bucket"
-        - "bronze-zone"
+        - "bronze"
         - "--data-relative-path"
-        - "olist/products/2026/03/products.csv"
-        
+        - "olist/olist_products_dataset.csv"
+
+  - task_id: ingest_order_items
+    operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
+    dependencies:
+      - start
+    params:
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
+      conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      application_args:
+        - "--from-bucket"
+        - "raw"
+        - "--to-bucket"
+        - "bronze"
+        - "--data-relative-path"
+        - "olist/olist_order_items_dataset.csv"
+
+  - task_id: ingest_order_payments
+    operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
+    dependencies:
+      - start
+    params:
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
+      conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      application_args:
+        - "--from-bucket"
+        - "raw"
+        - "--to-bucket"
+        - "bronze"
+        - "--data-relative-path"
+        - "olist/olist_order_payments_dataset.csv"
+
+  - task_id: ingest_order_reviews
+    operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
+    dependencies:
+      - start
+    params:
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
+      conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      application_args:
+        - "--from-bucket"
+        - "raw"
+        - "--to-bucket"
+        - "bronze"
+        - "--data-relative-path"
+        - "olist/olist_order_reviews_dataset.csv"
+
+  - task_id: ingest_sellers
+    operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
+    dependencies:
+      - start
+    params:
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
+      conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      application_args:
+        - "--from-bucket"
+        - "raw"
+        - "--to-bucket"
+        - "bronze"
+        - "--data-relative-path"
+        - "olist/olist_sellers_dataset.csv"
+
+  - task_id: ingest_geolocation
+    operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
+    dependencies:
+      - start
+    params:
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
+      conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      application_args:
+        - "--from-bucket"
+        - "raw"
+        - "--to-bucket"
+        - "bronze"
+        - "--data-relative-path"
+        - "olist/olist_geolocation_dataset.csv"
+
+  - task_id: ingest_product_category
+    operator: airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
+    dependencies:
+      - start
+    params:
+      application: /opt/spark/work-dir/src/spark/jobs/transform/spark_job_transform_bronze_layer.py
+      conn_id: spark_default
+      conf:
+        spark.master: "spark://spark-master:7077"
+      jars: /opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      application_args:
+        - "--from-bucket"
+        - "raw"
+        - "--to-bucket"
+        - "bronze"
+        - "--data-relative-path"
+        - "olist/product_category_name_translation.csv"
+
   - task_id: end
     operator: airflow.operators.empty.EmptyOperator
     dependencies:
       - ingest_orders
       - ingest_customers
       - ingest_products
+      - ingest_order_items
+      - ingest_order_payments
+      - ingest_order_reviews
+      - ingest_sellers
+      - ingest_geolocation
+      - ingest_product_category

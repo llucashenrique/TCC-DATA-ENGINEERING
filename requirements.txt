@@ -1,9 +1,0 @@
-minio
-python-dotenv
-pyspark
-delta-spark
-pyarrow
-pandas
-boto3
-psycopg2-binary
-urllib3==1.26.18

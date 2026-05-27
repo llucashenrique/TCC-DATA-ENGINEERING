@@ -8,7 +8,6 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from datetime import datetime
 
-
 DAGS_FOLDER = "/opt/airflow/dags"
 
 
@@ -26,10 +25,7 @@ def create_task(task_conf, dag):
 
     if operator.endswith("EmptyOperator"):
 
-        return EmptyOperator(
-            task_id=task_id,
-            dag=dag
-        )
+        return EmptyOperator(task_id=task_id, dag=dag)
 
     if operator.endswith("PythonOperator"):
 
@@ -38,7 +34,9 @@ def create_task(task_conf, dag):
         return PythonOperator(
             task_id=task_id,
             python_callable=load_callable(callable_path),
-            dag=dag
+            retries=params.get("retries", 0),
+            retry_delay=params.get("retry_delay"),
+            dag=dag,
         )
 
     if operator.endswith("SparkSubmitOperator"):
@@ -48,7 +46,9 @@ def create_task(task_conf, dag):
             application=params["application"],
             conn_id=params["conn_id"],
             application_args=params.get("application_args", []),
-            dag=dag
+            jars=params.get("jars"),
+            conf=params.get("conf"),
+            dag=dag,
         )
 
 
@@ -85,12 +85,9 @@ def load_dag(config_path):
     return dag
 
 
-for file in os.listdir(DAGS_FOLDER):
-
-    if file.endswith(".yaml"):
-
-        path = os.path.join(DAGS_FOLDER, file)
-
-        dag = load_dag(path)
-
-        globals()[dag.dag_id] = dag
+for root, dirs, files in os.walk(DAGS_FOLDER):
+    for file in files:
+        if file.endswith(".yaml"):
+            path = os.path.join(root, file)
+            dag = load_dag(path)
+            globals()[dag.dag_id] = dag

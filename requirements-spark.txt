@@ -1,0 +1,9 @@
+minio
+python-dotenv
+pyspark
+delta-spark
+pyarrow
+pandas
+boto3
+psycopg2-binary
+sqlalchemy

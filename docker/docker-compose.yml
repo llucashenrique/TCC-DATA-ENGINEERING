@@ -4,19 +4,34 @@ services:
       - tcc_network
     image: postgres:15
     container_name: tcc_postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: tcc_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d tcc_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 20
+
+  pgadmin:
+    networks:
+      - tcc_network
+    image: dpage/pgadmin4
+    container_name: tcc_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
 
   minio:
     networks:
@@ -24,6 +39,8 @@ services:
     image: minio/minio:latest
     container_name: tcc_minio
     command: server /data --console-address ":9001"
+    env_file:
+      - .env
     environment:
       - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
       - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
@@ -43,7 +60,7 @@ services:
     volumes:
       - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
       - ..:/opt/spark/work-dir
-      - spark_jars:/opt/spark/jars  # ← compartilha JARs
+      - spark_jars:/opt/spark/jars
     environment:
       - PYTHONPATH=/opt/spark/work-dir/src
     command: >
@@ -63,7 +80,7 @@ services:
     volumes:
       - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
       - ..:/opt/spark/work-dir
-      - spark_jars:/opt/spark/jars  # ← compartilha JARs
+      - spark_jars:/opt/spark/jars
     environment:
       - PYTHONPATH=/opt/spark/work-dir/src
     command: >
@@ -84,32 +101,18 @@ services:
       postgres:
         condition: service_healthy
       spark-master:
-        condition: service_started  # ← garante que o volume já foi populado
+        condition: service_started
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres/tcc_db
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
       PYTHONPATH: /opt/airflow:/opt/spark/work-dir/src
     volumes:
       - ..:/opt/spark/work-dir
       - ../airflow/dags:/opt/airflow/dags
-      - spark_jars:/opt/spark/jars  # ← mesmo volume
-    command: >
-      bash -c "
-      airflow db migrate &&
-      airflow connections create-default-connections &&
-      airflow connections add spark_default \
-        --conn-type spark \
-        --conn-host spark-master \
-        --conn-port 7077 || true &&
-      airflow users create \
-        --username admin \
-        --firstname Admin \
-        --lastname User \
-        --role Admin \
-        --email admin@example.com \
-        --password admin || true
-      "
+      - spark_jars:/opt/spark/jars
+    command: bash -c "airflow db migrate && airflow connections delete spark_default || true && airflow connections add spark_default --conn-type spark --conn-host spark-master --conn-port 7077 && airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin || true"
 
   airflow:
     networks:
@@ -123,15 +126,16 @@ services:
         condition: service_completed_successfully
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres/tcc_db
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
       PYTHONPATH: /opt/airflow:/opt/spark/work-dir/src
     ports:
       - "8081:8080"
     volumes:
       - ..:/opt/spark/work-dir
       - ../airflow/dags:/opt/airflow/dags
-      - spark_jars:/opt/spark/jars  # ← mesmo volume
+      - spark_jars:/opt/spark/jars
     command: >
       bash -c "
       airflow webserver &
@@ -145,8 +149,12 @@ services:
       context: ..
       dockerfile: docker/streamlit/Dockerfile
     container_name: tcc_streamlit
+    env_file:
+      - .env
     ports:
       - "8501:8501"
+    volumes:
+    - ../app:/app
     depends_on:
       - postgres
 

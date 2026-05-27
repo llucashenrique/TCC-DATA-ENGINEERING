@@ -10,6 +10,7 @@ USER airflow
 
 RUN pip install --no-cache-dir \
     apache-airflow-providers-apache-spark \
+    pyspark==3.5.1 \
     minio \
     kaggle==1.7.4.5
 
