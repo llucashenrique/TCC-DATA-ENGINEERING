@@ -1,4 +1,4 @@
-# 🏗️ TCC Data Engineering — Olist E-Commerce Analytics
+# TCC Data Engineering — Olist E-Commerce Analytics
 
 > Pipeline de dados end-to-end com ingestão, transformação em camadas e dashboard analítico, construído sobre uma stack de engenharia de dados moderna e totalmente containerizada.
 
@@ -11,7 +11,7 @@
 
 ---
 
-## 📌 Sobre o Projeto
+##  Sobre o Projeto
 
 Este projeto implementa um pipeline de dados completo para análise do dataset público da **Olist** (e-commerce brasileiro), disponível no Kaggle. O objetivo é demonstrar na prática os conceitos de Engenharia de Dados, desde a ingestão bruta até a visualização em um dashboard analítico interativo.
 
@@ -19,7 +19,7 @@ Este projeto implementa um pipeline de dados completo para análise do dataset p
 
 ---
 
-## 🎬 Demo
+## Demo
 
 > 📹 [Assista ao vídeo de demonstração](https://www.youtube.com/watch?v=8x7fRGnNbV4)
 
@@ -27,7 +27,7 @@ Este projeto implementa um pipeline de dados completo para análise do dataset p
 
 ---
 
-## 🏛️ Arquitetura
+## Arquitetura
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -81,7 +81,7 @@ Este projeto implementa um pipeline de dados completo para análise do dataset p
 
 ---
 
-## 🗂️ Estrutura do Projeto
+##  Estrutura do Projeto
 
 ```
 TCC-DATA-ENGINEERING/
@@ -123,7 +123,7 @@ TCC-DATA-ENGINEERING/
 
 ---
 
-## 🔄 Pipeline — DAGs do Airflow
+##  Pipeline — DAGs do Airflow
 
 | DAG | Descrição |
 |-----|-----------|
@@ -136,7 +136,7 @@ TCC-DATA-ENGINEERING/
 
 ---
 
-## 📊 Dashboard Analítico
+##  Dashboard Analítico
 
 O dashboard possui 7 seções:
 
@@ -152,7 +152,7 @@ O dashboard possui 7 seções:
 
 ---
 
-## 🛠️ Stack Tecnológica
+## Stack Tecnológica
 
 | Camada | Tecnologia |
 |--------|-----------|
@@ -166,7 +166,7 @@ O dashboard possui 7 seções:
 
 ---
 
-## 🚀 Como Executar
+##  Como Executar
 
 ### Pré-requisitos
 - Docker e Docker Compose instalados
@@ -211,7 +211,7 @@ No Airflow (`http://localhost:8081`), ative e execute os DAGs na ordem:
 
 ---
 
-## 📈 Principais Métricas do Dataset
+## Principais Métricas do Dataset
 
 | Métrica | Valor |
 |---------|-------|
@@ -226,7 +226,7 @@ No Airflow (`http://localhost:8081`), ative e execute os DAGs na ordem:
 
 ---
 
-## 👤 Autor
+##  Autor
 
 **Lucas Henrique**
 
